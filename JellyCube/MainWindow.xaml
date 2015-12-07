@@ -1,0 +1,74 @@
+﻿<Window x:Class="FrenetFrame.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:FrenetFrame"
+        xmlns:h="http://helix-toolkit.org/wpf"
+        xmlns:oxy="http://oxyplot.org/wpf"
+        mc:Ignorable="d"
+        Title="Jelly Cube" Height="670" Width="900" WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"></ColumnDefinition>
+            <ColumnDefinition Width="3*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Grid Grid.Column ="0">
+            <Border BorderBrush="Black" BorderThickness="2"></Border>
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
+                    <Button Name="PlayButton" Margin="5" Content="Play" Width="50" Height="50" Click="PlayButton_Click"></Button>
+                    <Button Name="PauseButton" Margin="5" Content="Pause" Width="50" Height="50" Click="PauseButton_Click"></Button>
+                    <Button Name="ResetButton" Margin="5" Content="Reset" Width="50" Height="50" Click="ResetButton_Click"></Button>
+                </StackPanel>
+                <Label Content="Animation Speed"></Label>
+                <Slider Name="AnimationSpeedSlider" Value="{Binding Path=AnimationSpeed}" Margin="20,0,20,20" Minimum="0" Maximum="7"></Slider>
+                <Label Content="Curve Description"></Label>
+                <Label Content="Parametrization of X"></Label>
+                <TextBox Name="XParametrizationTextBox" Text="{Binding Path=XParametrization, Mode=TwoWay}" Margin="20,0,20,20"></TextBox>
+                <Label Content="Parametrization of Y"></Label>
+                <TextBox Name="YParametrizationTextBox" Text="{Binding Path=YParametrization}" Margin="20,0,20,20"></TextBox>
+                <Label Content="Parametrization of Z"></Label>
+                <TextBox Name="ZParametrizationTextBox" Text="{Binding Path=ZParametrization}" Margin="20,0,20,20"></TextBox>
+                <Label Content="Minimum parameter value"></Label>
+                <TextBox Name="MinParameterValueTextBox" Text="{Binding Path=MinParameterValue}" Width="50" Margin="20,0,20,20" HorizontalAlignment="Left"></TextBox>
+                <Label Content="Maximum parameter value"></Label>
+                <TextBox Name="MaxParameterValueTextBox" Text="{Binding Path=MaxParameterValue}" Width="50" Margin="20,0,20,20" HorizontalAlignment="Left"></TextBox>
+                <Label Content="Curve Segments Count"></Label>
+                <TextBox Name="CurveSegmentsCount" Text="{Binding Path=SegmentsCount}" Width="50" Margin="20,0,20,20" HorizontalAlignment="Left"></TextBox>
+                <Button Name="LoadCurveButton" Content="Load Curve" Width="100" Height="30" Click="LoadCurveButton_Click"></Button>
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Column ="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="3*"></RowDefinition>
+                <RowDefinition Height="1*"></RowDefinition>
+            </Grid.RowDefinitions>
+            <h:HelixViewport3D Name="HelixViewport" Grid.Column="1" BorderBrush="Black" BorderThickness="2">
+                <h:DefaultLights/>
+                <h:LinesVisual3D Points="{Binding Path=CurvePoints}" Thickness="2" Color="Blue">
+                </h:LinesVisual3D>
+            </h:HelixViewport3D>
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"></ColumnDefinition>
+                    <ColumnDefinition Width="*"></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <Grid Grid.Column="0">
+                    <oxy:Plot Title="Curvature" TitleFontSize="12" BorderBrush="Black" BorderThickness="2">
+                        <oxy:Plot.Series>
+                            <oxy:LineSeries ItemsSource="{Binding KappaPoints}"/>
+                        </oxy:Plot.Series>
+                    </oxy:Plot>
+                </Grid>
+                <Grid Grid.Column="1">
+                    <oxy:Plot Title="Skewness" TitleFontSize="12" BorderBrush="Black" BorderThickness="2">
+                        <oxy:Plot.Series>
+                            <oxy:LineSeries ItemsSource="{Binding TauPoints}"/>
+                        </oxy:Plot.Series>
+                    </oxy:Plot>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

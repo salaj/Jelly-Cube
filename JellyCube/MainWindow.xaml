@@ -11,9 +11,9 @@
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*"></ColumnDefinition>
-            <ColumnDefinition Width="3*"></ColumnDefinition>
+            <!--<ColumnDefinition Width="3*"></ColumnDefinition>-->
         </Grid.ColumnDefinitions>
-        <Grid Grid.Column ="0">
+        <!--<Grid Grid.Column ="0">
             <Border BorderBrush="Black" BorderThickness="2"></Border>
             <StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
@@ -38,23 +38,21 @@
                 <TextBox Name="CurveSegmentsCount" Text="{Binding Path=SegmentsCount}" Width="50" Margin="20,0,20,20" HorizontalAlignment="Left"></TextBox>
                 <Button Name="LoadCurveButton" Content="Load Curve" Width="100" Height="30" Click="LoadCurveButton_Click"></Button>
             </StackPanel>
-        </Grid>
+        </Grid>-->
         <Grid Grid.Column ="1">
             <Grid.RowDefinitions>
-                <RowDefinition Height="3*"></RowDefinition>
+                <!--<RowDefinition Height="3*"></RowDefinition>-->
                 <RowDefinition Height="1*"></RowDefinition>
             </Grid.RowDefinitions>
             <h:HelixViewport3D Name="HelixViewport" Grid.Column="1" BorderBrush="Black" BorderThickness="2">
                 <h:DefaultLights/>
-                <h:LinesVisual3D Points="{Binding Path=CurvePoints}" Thickness="2" Color="Blue">
-                </h:LinesVisual3D>
             </h:HelixViewport3D>
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"></ColumnDefinition>
                     <ColumnDefinition Width="*"></ColumnDefinition>
                 </Grid.ColumnDefinitions>
-                <Grid Grid.Column="0">
+                <!--<Grid Grid.Column="0">
                     <oxy:Plot Title="Curvature" TitleFontSize="12" BorderBrush="Black" BorderThickness="2">
                         <oxy:Plot.Series>
                             <oxy:LineSeries ItemsSource="{Binding KappaPoints}"/>
@@ -67,7 +65,7 @@
                             <oxy:LineSeries ItemsSource="{Binding TauPoints}"/>
                         </oxy:Plot.Series>
                     </oxy:Plot>
-                </Grid>
+                </Grid>-->
             </Grid>
         </Grid>
     </Grid>

@@ -1,6 +1,7 @@
 ﻿using System.Windows.Media;
 using FrenetFrame.models;
 using HelixToolkit.Wpf;
+using JellyCube.models;
 using OxyPlot;
 using OxyPlot.Series;
 using System;
@@ -164,9 +165,11 @@ namespace FrenetFrame
         private const double Epsilon = 0.0001;
         Dictionary<string, FloatingPoint> symbols;
         Expression symbol;
-        private PointsVisual3D points;
-        private LinesVisual3D lines;
         private IBezierCubeVisual3D bezierCube;
+        private IFrameVisual3D frameCube;
+        private CombinedManipulator manipulator;
+        private int cubeSize = 6;
+        private RectangleVisual3D rect;
 
         #endregion
 
@@ -186,16 +189,37 @@ namespace FrenetFrame
         {
             const double maxVal = 8;
 
-            bezierCube = new BezierCubeVisual3D();
-            bezierCube.Initialize();
-            points = new PointsVisual3D();
-            points.Points = bezierCube.GetControlPoints();
-            points.Size = 3;
-            HelixViewport.Children.Add(points);
+            //SortingVisual3D sortingVisual3D = new SortingVisual3D();
+            //sortingVisual3D.SortingFrequency = 2;
+            //HelixViewport.Children.Add(sortingVisual3D);
 
-            lines = new LinesVisual3D();
-            lines.Points = bezierCube.GetControlLines();
-            HelixViewport.Children.Add(lines);
+
+
+            bezierCube = new BezierCubeVisual3D();
+            bezierCube.Initialize(cubeSize);
+
+            HelixViewport.Children.Add(bezierCube.points);
+            HelixViewport.Children.Add(bezierCube.lines);
+
+            frameCube = new FrameVisual3D();
+            frameCube.Initialize(cubeSize);
+            HelixViewport.Children.Add(frameCube.points);
+            HelixViewport.Children.Add(frameCube.lines);
+            HelixViewport.Children.Add(frameCube.GetJointsPoints(bezierCube.GetCornerPoints()));
+
+            manipulator = new CombinedManipulator();
+            HelixViewport.Children.Add(manipulator);
+
+            rect = new RectangleVisual3D();
+            rect.Fill = new SolidColorBrush(Color.FromArgb(120, 255, 0, 0));
+            rect.Normal = new Vector3D(0, 1, 0);
+            rect.Origin = new Point3D(-10, 0, 0);
+            rect.Width = 20;
+            rect.Length = 20;
+            rect.LengthDirection = new Vector3D(0, 0, 1);
+
+            HelixViewport.Children.Add(rect);
+            
 
             double arrowsSize = 0.05;
 
@@ -293,7 +317,7 @@ namespace FrenetFrame
             intervalFunc = (x) => (int)(500 / Math.Pow(2, x));
             dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
             dispatcherTimer.Tick += dispatcherTimer_Tick;
-            dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, intervalFunc(animationSpeed));
+            dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 10); //new TimeSpan(0, 0, 0, 0, intervalFunc(animationSpeed));
 
             dispatcherTimer.Start();
         }
@@ -317,88 +341,36 @@ namespace FrenetFrame
             return new Vector3D(-v.Z, -v.X, v.Y);
         }
 
+         
+
         private void dispatcherTimer_Tick(object sender, EventArgs e)
         {
-            //if (actualParameterIndex >= segmentsCount - 2)
-            //{
-            //    actualParameterIndex = 2;
-            //    kappaPoints.Clear();
-            //    tauPoints.Clear();
-            //}
+            HelixViewport.Children.Remove(bezierCube.points);
+            HelixViewport.Children.Remove(bezierCube.lines);
+            HelixViewport.Children.Remove(frameCube.points);
+            HelixViewport.Children.Remove(frameCube.lines);
 
-            //var ft = (curveArray[actualParameterIndex + 1] - curveArray[actualParameterIndex - 1]) / (2 * parameterStep);
-            ////var dx = Calculus.Differentiate(symbol, xExpression);
-            ////var dy = Calculus.Differentiate(symbol, yExpression);
-            ////var dz = Calculus.Differentiate(symbol, zExpression);
-            ////ft = new Vector3D(Evaluate.Evaluate(symbols, dx).RealValue, Evaluate.Evaluate(symbols, dy).RealValue, 
-            ////    Evaluate.Evaluate(symbols, dz).RealValue);
+            frameCube.SetTransform(manipulator.TargetTransform);
 
-            //var nft = Norm(ft);
-            //var tangent = ft / nft;
-            //var ftt = ((curveArray[actualParameterIndex + 1] - curveArray[actualParameterIndex]) +
-            //   (curveArray[actualParameterIndex - 1] - curveArray[actualParameterIndex])) / (parameterStep * parameterStep);
-            //var ftcftt = Vector3D.CrossProduct(ft, ftt);
-            //var nftcftt = Norm(ftcftt);
-            //Vector3D binormal;
-            //if (Math.Abs(nftcftt) < Epsilon)
-            //{
-            //    binormal = PerpendicularVector(tangent);
-            //}
-            //else
-            //    binormal = ftcftt / nftcftt;
-            //var normal = Vector3D.CrossProduct(tangent, binormal);
-
-            //HelixViewport.Children.Remove(arrowTangent);
-            //arrowTangent.Direction = tangent;
-            //arrowTangent.Point1 = curveArray[actualParameterIndex];
-            //arrowTangent.Point2 = curveArray[actualParameterIndex] + tangent;
-            //arrowTangent.Diameter = 0.1;
-            //arrowTangent.Fill = System.Windows.Media.Brushes.Red;
-            //HelixViewport.Children.Add(arrowTangent);
-
-            //HelixViewport.Children.Remove(arrowNormal);
-            //arrowNormal.Direction = normal;
-            //arrowNormal.Point1 = curveArray[actualParameterIndex];
-            //arrowNormal.Point2 = curveArray[actualParameterIndex] + normal;
-            //arrowNormal.Diameter = 0.1;
-            //arrowNormal.Fill = System.Windows.Media.Brushes.Green;
-            //HelixViewport.Children.Add(arrowNormal);
-
-            //HelixViewport.Children.Remove(arrowBinormal);
-            //arrowBinormal.Direction = binormal;
-            //arrowBinormal.Point1 = curveArray[actualParameterIndex];
-            //arrowBinormal.Point2 = curveArray[actualParameterIndex] + binormal;
-            //arrowBinormal.Diameter = 0.1;
-            //arrowBinormal.Fill = System.Windows.Media.Brushes.Yellow;
-            //HelixViewport.Children.Add(arrowBinormal);
-
-            //var kappa = nftcftt / (nft * nft * nft);
-            //if (Math.Abs(kappa) < Epsilon || Math.Abs(nftcftt) < Epsilon)
-            //    kappa = 0;
-            //if (kappaPoints.Count > 0 && Math.Abs(kappa - kappaPoints[kappaPoints.Count - 1].Y) < Epsilon)
-            //    kappa = kappaPoints[kappaPoints.Count - 1].Y;
-
-            //var fttt = ((curveArray[actualParameterIndex + 2] - curveArray[actualParameterIndex - 2]) +
-            //    (curveArray[actualParameterIndex - 1] - curveArray[actualParameterIndex + 1]) * 2) /
-            //    (2 * parameterStep * parameterStep * parameterStep);
-            //var tau = Vector3D.DotProduct(ftcftt, fttt) / (nftcftt * nftcftt);
-            //if (Math.Abs(tau) < Epsilon || Math.Abs(Vector3D.DotProduct(ftcftt, fttt)) < Epsilon)
-            //    tau = 0;
-            //if (tauPoints.Count > 0 && Math.Abs(tau - tauPoints[tauPoints.Count - 1].Y) < Epsilon)
-            //    tau = tauPoints[kappaPoints.Count - 1].Y;
-
-            //kappaPoints.Add(new DataPoint(parameterStep * actualParameterIndex, kappa));
-            //tauPoints.Add(new DataPoint(parameterStep * actualParameterIndex, tau));
-            //actualParameterIndex++;
-
-            int indexOfPoints = HelixViewport.Children.IndexOf(points);
-            HelixViewport.Children.Remove(points);
-            HelixViewport.Children.Remove(lines);
+            bezierCube.CalculateJointForces(frameCube.GetFramePoints());
             bezierCube.Update();
-            points.Points = bezierCube.GetControlPoints();
-            lines.Points = bezierCube.GetControlLines();
-            HelixViewport.Children.Add(lines);
-            HelixViewport.Children.Add(points);
+            LinesVisual3D frameLines = frameCube.GetJointsPoints(bezierCube.GetCornerPoints());
+            HelixViewport.Children.Remove(frameLines);
+            HelixViewport.Children.Add(frameLines);
+
+
+            bezierCube.points.Points = bezierCube.GetControlPoints();
+            bezierCube.lines.Points = bezierCube.GetControlLines();
+            HelixViewport.Children.Add(bezierCube.lines);
+            HelixViewport.Children.Add(bezierCube.points);
+
+            frameCube.points.Points = frameCube.GetControlPoints();
+            frameCube.lines.Points = frameCube.GetControlLines();
+            HelixViewport.Children.Add(frameCube.lines);
+            HelixViewport.Children.Add(frameCube.points);
+
+            HelixViewport.Children.Remove(rect);
+            HelixViewport.Children.Add(rect);
         }
 
         private void PlayButton_Click(object sender, RoutedEventArgs e)

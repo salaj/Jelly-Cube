@@ -33,9 +33,9 @@ namespace FrenetFrame.physics
         public void Initialize()
         {
             Mass = 1;
-            Springer = 0.1; //c  sprężystość
+            Springer = 0.3; //c  sprężystość
             Viscosity = 0.05; //k lepkość
-            Delta = 0.05;
+            Delta = 0.1;
         }
 
         public double GetVectorLength(Vector3D a)

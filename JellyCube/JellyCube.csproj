@@ -116,14 +116,18 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="common\IVisual3dProvidable.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="models\BaseVisual3D.cs" />
     <Compile Include="models\CubeVisual3D.cs" />
+    <Compile Include="models\FrameVisual3D.cs" />
     <Compile Include="models\ICubeVisual3D.cs" />
+    <Compile Include="models\IFrameVisual3D.cs" />
     <Compile Include="physics\ISpring.cs" />
     <Compile Include="physics\Spring.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">

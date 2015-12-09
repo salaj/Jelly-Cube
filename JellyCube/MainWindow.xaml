@@ -7,44 +7,49 @@
         xmlns:h="http://helix-toolkit.org/wpf"
         xmlns:oxy="http://oxyplot.org/wpf"
         mc:Ignorable="d"
-        Title="Jelly Cube" Height="670" Width="900" WindowStartupLocation="CenterScreen">
+        Title="Jelly Cube" Height="720" Width="1200" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*"></ColumnDefinition>
-            <!--<ColumnDefinition Width="3*"></ColumnDefinition>-->
+            <ColumnDefinition Width="3*"></ColumnDefinition>
         </Grid.ColumnDefinitions>
-        <!--<Grid Grid.Column ="0">
+        <Grid Grid.Column ="0">
             <Border BorderBrush="Black" BorderThickness="2"></Border>
             <StackPanel>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
-                    <Button Name="PlayButton" Margin="5" Content="Play" Width="50" Height="50" Click="PlayButton_Click"></Button>
-                    <Button Name="PauseButton" Margin="5" Content="Pause" Width="50" Height="50" Click="PauseButton_Click"></Button>
-                    <Button Name="ResetButton" Margin="5" Content="Reset" Width="50" Height="50" Click="ResetButton_Click"></Button>
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="10">
+                    <Button Name="PlayButton" Margin="5" Content="Play" Width="200" Height="30" Click="PlayButton_Click"></Button>
+                    <Button Name="PauseButton" Margin="5" Content="Pause" Width="200" Height="30" Click="PauseButton_Click"></Button>
+                    <Button Name="SettingsButton" Margin="5" Content="Apply settings" Width="200" Height="30" Click="RefreshButtonClick"></Button>
+                    <Button Name="ResetButton" Margin="5" Content="Restore default" Width="200" Height="30" Click="ResetButtonClick"></Button>
                 </StackPanel>
-                <Label Content="Animation Speed"></Label>
-                <Slider Name="AnimationSpeedSlider" Value="{Binding Path=AnimationSpeed}" Margin="20,0,20,20" Minimum="0" Maximum="7"></Slider>
-                <Label Content="Curve Description"></Label>
-                <Label Content="Parametrization of X"></Label>
-                <TextBox Name="XParametrizationTextBox" Text="{Binding Path=XParametrization, Mode=TwoWay}" Margin="20,0,20,20"></TextBox>
-                <Label Content="Parametrization of Y"></Label>
-                <TextBox Name="YParametrizationTextBox" Text="{Binding Path=YParametrization}" Margin="20,0,20,20"></TextBox>
-                <Label Content="Parametrization of Z"></Label>
-                <TextBox Name="ZParametrizationTextBox" Text="{Binding Path=ZParametrization}" Margin="20,0,20,20"></TextBox>
-                <Label Content="Minimum parameter value"></Label>
-                <TextBox Name="MinParameterValueTextBox" Text="{Binding Path=MinParameterValue}" Width="50" Margin="20,0,20,20" HorizontalAlignment="Left"></TextBox>
-                <Label Content="Maximum parameter value"></Label>
-                <TextBox Name="MaxParameterValueTextBox" Text="{Binding Path=MaxParameterValue}" Width="50" Margin="20,0,20,20" HorizontalAlignment="Left"></TextBox>
-                <Label Content="Curve Segments Count"></Label>
-                <TextBox Name="CurveSegmentsCount" Text="{Binding Path=SegmentsCount}" Width="50" Margin="20,0,20,20" HorizontalAlignment="Left"></TextBox>
-                <Button Name="LoadCurveButton" Content="Load Curve" Width="100" Height="30" Click="LoadCurveButton_Click"></Button>
+                <Label Content="Animation refresh rate"></Label>
+                <Slider Name="AnimationSpeedSlider" Value="{Binding Path=AnimationSpeed}" Margin="10,0,10,10" Minimum="1" Maximum="60"></Slider>
+                <Label Content="Mass of control points (m)"></Label>
+                <TextBox Name="MassTextBox" Text="{Binding Path=Mass, Mode=TwoWay}" Margin="10,0,10,10"></TextBox>
+                <Label Content="Springer Rate(c1)"></Label>
+                <TextBox Name="SpringerTextBox" Text="{Binding Path=Springer}" Margin="10,0,10,10"></TextBox>
+                <Label Content="Springer Rate(c2)"></Label>
+                <TextBox Name="SpringerFrameTextBox" Text="{Binding Path=SpringerFrame}" Margin="10,0,10,10"></TextBox>
+                <Label Content="Viscosity Rate(k)"></Label>
+                <TextBox Name="ViscosityTextBox" Text="{Binding Path=Viscosity}" Margin="10,0,10,10"></TextBox>
+                <Label Content="Delta Time Rate"></Label>
+                <TextBox Name="DeltaTextBox" Text="{Binding Path=Delta}" Width="50" Margin="10,0,10,10" HorizontalAlignment="Left"></TextBox>
+                <Label Content="Noise Rate"></Label>
+                <TextBox Name="NoiseTextBox" Text="{Binding Path=Noise}" Width="50" Margin="10,0,10,10" HorizontalAlignment="Left"></TextBox>
+                <StackPanel Margin="10,0,10,10">
+                    <Label Content="Surface Visibility"></Label>
+                    <CheckBox Name="SurfaceVisibilityCheckBox" IsChecked="{Binding Path=IsSurfaceVisible}" Unchecked="SurfaceVisibilityCheckBox_OnUnchecked" Checked="SurfaceVisibilityCheckBox_OnChecked" ></CheckBox>
+                    <Label Content="Deforming Object"></Label>
+                    <CheckBox Name="DeformingObjectCheckBox" IsChecked="{Binding Path=IsDeformingObjectVisible}" Unchecked="DeformingObjectCheckBox_OnUnchecked" Checked="DeformingObjectCheckBox_OnChecked" ></CheckBox>
+                </StackPanel>
             </StackPanel>
-        </Grid>-->
+        </Grid>
         <Grid Grid.Column ="1">
             <Grid.RowDefinitions>
                 <!--<RowDefinition Height="3*"></RowDefinition>-->
                 <RowDefinition Height="1*"></RowDefinition>
             </Grid.RowDefinitions>
-            <h:HelixViewport3D Name="HelixViewport" Grid.Column="1" BorderBrush="Black" BorderThickness="2">
+            <h:HelixViewport3D Name="HelixViewport" ShowFrameRate="True" ShowCoordinateSystem="True" Grid.Column="1" BorderBrush="Black" BorderThickness="2">
                 <h:DefaultLights/>
             </h:HelixViewport3D>
             <Grid Grid.Row="1">

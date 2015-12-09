@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using FrenetFrame.physics;
@@ -23,8 +24,14 @@ namespace FrenetFrame.models
         private Vector3D[, ,] cornerPoints;
         private Vector3D[, ,] jointForces;
         private Point3D[, ,] controlPointsOrigin;
+        private IList<Point3D> sphereBezierParameters; 
 
-        private ISpring spring;
+        public ISpring spring { get; set; }
+        public ISpring springFrame { get; set; }
+        public double noise { get; set; }
+        public ICollisionChecker CollisionChecker { get; set; }
+
+
         public override void Initialize(double cubeSize)
         {
             base.N = 4;
@@ -32,7 +39,9 @@ namespace FrenetFrame.models
             radius = cubeSize/(double)(N - 1);
             rand = new Random();
             spring = new Spring();
+            springFrame = new Spring();
             spring.Initialize();
+            springFrame.Initialize();
             controlPointsOrigin = new Point3D[N, N, N];
             X = new Vector3D[N, N, N];
             Xn = new Vector3D[N, N, N];
@@ -59,6 +68,7 @@ namespace FrenetFrame.models
             points.Points = GetControlPoints();
             lines.Points = GetControlLines();
             lines.Color = Color.FromArgb(255,0, 0, 255);
+            CalculateSpherePoints();
         }
 
 
@@ -110,13 +120,14 @@ namespace FrenetFrame.models
                         P1 = X[3 * i, 3 * j, 3 * k];
                         Point3D p = framePoints[i, j, k];
                         P2 = new Vector3D(p.X, p.Y, p.Z);
+                        CollisionChecker.TrimPoint(ref P2);
                         Vector3D V1 = V0[3 * i, 3 * j, 3 * k];
                         Vector3D I0 = new Vector3D(0, 0, 0); //długość spoczynkowa sprężynki połączonej z ramką ma być 0
                         Vector3D diff = P1 - P2;
                         if (Math.Sqrt(diff.X*diff.X + diff.Y*diff.Y + diff.Z*diff.Z) < 0.00001)
                             jointForces[i, j, k] = new  Vector3D(0, 0, 0);
                         else
-                            jointForces[i,j,k] = spring.GetCurrentForce(P1, P2, I0, V1);
+                            jointForces[i,j,k] = springFrame.GetCurrentForce(P1, P2, I0, V1);
                     }
                 }
             }
@@ -183,12 +194,137 @@ namespace FrenetFrame.models
                             }
                         }
                         force += applyFrameForce(i, j, k);
-                        V0[i, j, k] = spring.GetNextVelocity(force, V0[i, j, k]);
-                        Xn[i, j, k] = spring.GetSecondPosition(x, V0[i, j, k]);
-                    }
+                        //V0[i, j, k] = spring.GetNextVelocity(force, V0[i, j, k]);
+                        //double maxLen = 2;
+                        //double len = Math.Sqrt(force.X * force.X + force.Y * force.Y + force.Z * force.Z);
+                        //if (len > maxLen)
+                        //{
+                        //    force = force / len * maxLen;
+                        //}
+                        //if (i == 3 && j == 0 && k == 3)
+                        //{
+                        //    int de = 2;
+                        //}
+                        Vector3D v = spring.GetNextVelocity(force, V0[i, j, k]);
+                        Vector3D xn = spring.GetSecondPosition(x, v);
+                        bool isCollisionDetected = CollisionChecker.CheckCollision(xn, ref v);
 
+                        //if (isCollisionDetected)
+                        //    V0[i, j, k] = new Vector3D(0, 0, 0);
+                        //else
+                            V0[i, j, k] = v;
+                        xn = spring.GetSecondPosition(x, V0[i, j, k]);
+                        //Xn[i, j, k] = spring.GetSecondPosition(x, V0[i, j, k]);
+                        //CollisionChecker.TrimPoint(ref xn);
+                        Xn[i, j, k] = xn;
+                    }
                 }
             }
+        }
+
+        private void CalculateSpherePoints()
+        {
+            var sphereRadius = (N - 1) * radius / 2;
+            var step = 0.01;
+            sphereBezierParameters = new List<Point3D>();
+            for (double u = 0; u <= 1; u += step)
+            {
+                var uBezier = CalculateBezierVector(u);
+                for (double v = 0; v <= 1; v += step)
+                {
+                    var vBezier = CalculateBezierVector(v);
+                    for (double w = 0; w <= 1; w += step)
+                    {
+                        var wBezier = CalculateBezierVector(w);
+                        var sum = new Point3D();
+                        for (int i = 0; i < N; i++)
+                        {
+                            for (int j = 0; j < N; j++)
+                            {
+                                for (int k = 0; k < N; k++)
+                                {
+                                    var factor = uBezier[i] * vBezier[j] * wBezier[k];
+                                    var point = controlPoints[i, j, k];
+                                    sum = new Point3D(sum.X + point.X * factor, sum.Y + point.Y * factor, sum.Z + point.Z * factor);
+                                }
+                            }
+                        }
+                        if (Math.Abs(Math.Sqrt(sum.X * sum.X + sum.Y * sum.Y + sum.Z * sum.Z) - sphereRadius) < 0.0005)
+                        {
+                            sphereBezierParameters.Add(new Point3D(u, v, w));
+                        }
+                    }
+                }
+            }
+
+        }
+
+        protected double[] CalculateBezierVector(double t)
+        {
+            return new double[4] { (1 - t) * (1 - t) * (1 - t), 3 * t * (1 - t) * (1 - t), 3 * t * t * (1 - t), t * t * t };
+        }
+
+        public IList<Point3D> GetSpherePoints()
+        {
+            var spherePoints = new List<Point3D>();
+
+            foreach (var parameters in sphereBezierParameters)
+            {
+                var uBezier = CalculateBezierVector(parameters.X);
+                var vBezier = CalculateBezierVector(parameters.Y);
+                var wBezier = CalculateBezierVector(parameters.Z);
+                var sum = new Point3D();
+                for (int i = 0; i < N; i++)
+                {
+                    for (int j = 0; j < N; j++)
+                    {
+                        for (int k = 0; k < N; k++)
+                        {
+                            var factor = uBezier[i] * vBezier[j] * wBezier[k];
+                            var point = controlPoints[i, j, k];
+                            sum = new Point3D(sum.X + point.X * factor, sum.Y + point.Y * factor, sum.Z + point.Z * factor);
+                        }
+                    }
+                }
+                spherePoints.Add(sum);
+            }
+            return spherePoints;
+        }
+
+
+        public IList<Point3D> GetFaceControlPoints(int faceNumber)
+        {
+            IList<Point3D> points = new List<Point3D>();
+            for (int i = 0; i < N; i++)
+            {
+                for (int j = 0; j < N; j++)
+                {
+                    switch (faceNumber)
+                    {
+                        case 0:
+                            points.Add(controlPoints[i, j, 0]);
+                            break;
+                        case 1:
+                            points.Add(controlPoints[i, 0, j]);
+                            break;
+                        case 2:
+                            points.Add(controlPoints[0, i, j]);
+                            break;
+                        case 3:
+                            points.Add(controlPoints[i, j, 3]);
+                            break;
+                        case 4:
+                            points.Add(controlPoints[i, 3, j]);
+                            break;
+                        case 5:
+                            points.Add(controlPoints[3, i, j]);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+            return points;
         }
 
         private void copyActualPointsToVisualObject()
@@ -216,10 +352,9 @@ namespace FrenetFrame.models
                 x = rand.Next(0, N);
                 y = rand.Next(0, N);
                 z = rand.Next(0, N);
-                double factor = 5.0f;
-                X[x, y, z].X += factor * (rand.NextDouble() - 0.5);
-                X[x, y, z].Y += factor * (rand.NextDouble() - 0.5);
-                X[x, y, z].Z += factor * (rand.NextDouble() - 0.5);
+                X[x, y, z].X += noise * (rand.NextDouble() - 0.5);
+                X[x, y, z].Y += noise * (rand.NextDouble() - 0.5);
+                X[x, y, z].Z += noise * (rand.NextDouble() - 0.5);
             }
         }
 
@@ -232,10 +367,9 @@ namespace FrenetFrame.models
                 x = rand.Next(0, N);
                 y = rand.Next(0, N);
                 z = rand.Next(0, N);
-                double factor = 5.0f;
-                V0[x, y, z].X += factor * (rand.NextDouble() - 0.5);
-                V0[x, y, z].Y += factor * (rand.NextDouble() - 0.5);
-                V0[x, y, z].Z += factor * (rand.NextDouble() - 0.5);
+                V0[x, y, z].X += noise * (rand.NextDouble() - 0.5);
+                V0[x, y, z].Y += noise * (rand.NextDouble() - 0.5);
+                V0[x, y, z].Z += noise * (rand.NextDouble() - 0.5);
             }
         }
 

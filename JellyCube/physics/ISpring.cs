@@ -9,6 +9,26 @@ namespace FrenetFrame.physics
 {
     public interface ISpring
     {
+        /// <summary>
+        /// Mass of the Spring
+        /// </summary>
+        double Mass { get; set; }
+
+        /// <summary>
+        /// Współczynnik sprężystości
+        /// </summary>
+        double Springer { get; set; }
+
+        /// <summary>
+        /// Współycznnik lepkości
+        /// </summary>
+        double Viscosity { get; set; }
+
+        /// <summary>
+        /// Krok w czasie
+        /// </summary>
+        double Delta { get; set; }
+
         void Initialize();
 
         Vector3D GetSecondPosition(Vector3D X0, Vector3D V0);

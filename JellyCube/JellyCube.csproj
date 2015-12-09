@@ -71,6 +71,10 @@
       <HintPath>..\packages\MathNet.Symbolics.0.7.1\lib\net40\MathNet.Symbolics.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="MIConvexHull, Version=1.0.10.1021, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>bin\Debug\MIConvexHull.dll</HintPath>
+    </Reference>
     <Reference Include="NCalc, Version=1.3.8.0, Culture=neutral, PublicKeyToken=973cde3f1cafed03, processorArchitecture=MSIL">
       <HintPath>..\packages\ncalc.1.3.8\lib\NCalc.dll</HintPath>
       <Private>True</Private>
@@ -86,6 +90,10 @@
     <Reference Include="OxyPlot.Xps, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\OxyPlot.Wpf.1.0.0-unstable1875\lib\net45\OxyPlot.Xps.dll</HintPath>
       <Private>True</Private>
+    </Reference>
+    <Reference Include="Petzold.Media3D, Version=0.9.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>bin\Debug\Petzold.Media3D.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -117,6 +125,8 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="common\IVisual3dProvidable.cs" />
+    <Compile Include="common\Matrix4.cs" />
+    <Compile Include="common\Vector4.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -124,10 +134,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="models\BaseVisual3D.cs" />
+    <Compile Include="models\BezierSurface.cs" />
     <Compile Include="models\CubeVisual3D.cs" />
     <Compile Include="models\FrameVisual3D.cs" />
+    <Compile Include="models\ICollisionChecker.cs" />
     <Compile Include="models\ICubeVisual3D.cs" />
     <Compile Include="models\IFrameVisual3D.cs" />
+    <Compile Include="models\IRoomVisual3D.cs" />
+    <Compile Include="models\RoomVisual3D.cs" />
     <Compile Include="physics\ISpring.cs" />
     <Compile Include="physics\Spring.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">

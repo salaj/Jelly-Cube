@@ -32,10 +32,10 @@ namespace FrenetFrame.physics
 
         public void Initialize()
         {
-            Mass = 1;
-            Springer = 0.3; //c  sprężystość
-            Viscosity = 0.05; //k lepkość
-            Delta = 0.1;
+            //Mass = 1;
+            //Springer = 0.5; //c  sprężystość
+            //Viscosity = 0.2; //k lepkość
+            //Delta = 0.5;
         }
 
         public double GetVectorLength(Vector3D a)
@@ -74,9 +74,12 @@ namespace FrenetFrame.physics
             double k = Viscosity;
             Vector3D L = P1 - P2;
             double len = GetVectorLength(L);
+            double eps = 0.0001;
+            if (len < eps)
+                return new Vector3D(0, 0, 0);
             double Rlength = GetVectorLength(I0);
             double dX = len - Rlength;
-            double FstructMag = -1 * c * dX;
+            double FstructMag = (-1 * c * dX);
             L = NormalizeVector3D(L);
             return L * FstructMag;
         }
@@ -84,8 +87,11 @@ namespace FrenetFrame.physics
         private Vector3D GetDampingForce(Vector3D P1, Vector3D P2, Vector3D V)
         {
             double k = Viscosity;
-            Vector3D L = P2 - P1;
+            Vector3D L = P1 - P2;
             double len = GetVectorLength(L);
+            double eps = 0.0001;
+            if (len < eps)
+                return new Vector3D(0, 0, 0);
             double vDotL = Vector3D.DotProduct(V, L);
             double FdampMag = (-1 * k * vDotL) / len;
             L = NormalizeVector3D(L);

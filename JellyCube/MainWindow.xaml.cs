@@ -1,9 +1,14 @@
-﻿using System.Windows.Media;
+﻿using System.Collections;
+using System.Linq;
+using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Media;
 using FrenetFrame.models;
 using HelixToolkit.Wpf;
 using JellyCube.models;
-using OxyPlot;
-using OxyPlot.Series;
+using MIConvexHull;
+//using OxyPlot;
+//using OxyPlot.Series;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -11,11 +16,87 @@ using System.Windows;
 using System.Windows.Media.Media3D;
 //using Expression = NCalc.Expression;
 using MathNet.Symbolics;
+using Petzold.Media3D;
 using Expression = MathNet.Symbolics.Expression;
 using System.Collections.Generic;
 
 namespace FrenetFrame
 {
+
+    //    /// <summary>
+    ///// Simple interface to unify different types of triangulations in the future.
+    ///// </summary>
+    ///// <typeparam name="TVertex"></typeparam>
+    ///// <typeparam name="TCell"></typeparam>
+    //public interface ITriangulation<TVertex, TCell>
+    //    where TCell : TriangulationCell<TVertex, TCell>, new()
+    //    where TVertex : IVertex
+    //{
+    //    /// <summary>
+    //    /// Triangulation simplexes. For 2D - triangles, 3D - tetrahedrons, etc ...
+    //    /// </summary>
+    //    IEnumerable<TCell> Cells { get; }
+    //}
+
+    //class Vertex : IVertex
+    //    {
+    //        public double[] Position { get; set; }
+
+    //        public Vertex(Point3D point)
+    //        {
+    //            Position = new double[3] { point.X, point.Y, point.Z };
+    //        }
+    //    }
+
+    public class Vertex : ModelVisual3D, IVertex
+    {
+        static readonly Material material = new DiffuseMaterial(Brushes.Black);
+        static readonly SphereMesh mesh = new SphereMesh { Slices = 6, Stacks = 4, Radius = 0.5 };
+
+        static readonly Material hullMaterial = new DiffuseMaterial(Brushes.Yellow);
+        static readonly SphereMesh hullMesh = new SphereMesh { Slices = 6, Stacks = 4, Radius = 1.0 };
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Vertex"/> class.
+        /// </summary>
+        /// <param name="x">The x position.</param>
+        /// <param name="y">The y position.</param>
+        /// <param name="z">The z position.</param>
+        /// <param name="isHull"></param>
+        public Vertex(double x, double y, double z, bool isHull = false)
+        {
+            Content = new GeometryModel3D
+            {
+                Geometry = isHull ? hullMesh.Geometry : mesh.Geometry,
+                Material = isHull ? hullMaterial : material,
+                Transform = new TranslateTransform3D(x, y, z)
+            };
+            Position = new double[] { x, y, z };
+        }
+
+        public Vertex AsHullVertex()
+        {
+            return new Vertex(Position[0], Position[1], Position[2], true);
+        }
+
+        public Point3D Center { get { return new Point3D(Position[0], Position[1], Position[2]); } }
+
+        /// <summary>
+        /// Gets or sets the coordinates.
+        /// </summary>
+        /// <value>The coordinates.</value>
+        public double[] Position
+        {
+            get;
+            set;
+        }
+    }
+
+    public class Face : ConvexFace<Vertex, Face>
+    {
+
+    }
+
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
@@ -31,22 +112,32 @@ namespace FrenetFrame
                 PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        ObservableCollection<Point3D> curvePoints;
-        public ObservableCollection<Point3D> CurvePoints
+        private bool isSurfaceVisible;
+        public bool IsSurfaceVisible
         {
-            get { return curvePoints; }
+            get { return isSurfaceVisible; }
+            set
+            {
+                if (value != isSurfaceVisible)
+                {
+                    isSurfaceVisible = value;
+                    OnPropertyChanged("IsSurfaceVisible");
+                }
+            }
         }
 
-        ObservableCollection<DataPoint> kappaPoints;
-        public ObservableCollection<DataPoint> KappaPoints
+        private bool isDeformingObjectVisible;
+        public bool IsDeformingObjectVisible
         {
-            get { return kappaPoints; }
-        }
-
-        ObservableCollection<DataPoint> tauPoints;
-        public ObservableCollection<DataPoint> TauPoints
-        {
-            get { return tauPoints; }
+            get { return isDeformingObjectVisible; }
+            set
+            {
+                if (value != isDeformingObjectVisible)
+                {
+                    isDeformingObjectVisible = value;
+                    OnPropertyChanged("IsDeformingObjectVisible");
+                }
+            }
         }
 
         private double animationSpeed;
@@ -63,72 +154,85 @@ namespace FrenetFrame
             }
         }
 
-        private string xParametrization;
-        public string XParametrization
+        private double noise;
+        public double Noise
         {
-            get { return xParametrization; }
+            get { return noise; }
             set
             {
-                if (value != xParametrization)
+                if (value != noise)
                 {
-                    xParametrization = value;
-                    OnPropertyChanged("XParametrization");
+                    noise = value;
+                    OnPropertyChanged("Noise");
                 }
             }
         }
 
-        private string yParametrization;
-        public string YParametrization
+        private double mass;
+        public double Mass
         {
-            get { return yParametrization; }
+            get { return mass; }
             set
             {
-                if (value != yParametrization)
+                if (value != mass)
                 {
-                    yParametrization = value;
-                    OnPropertyChanged("YParametrization");
+                    mass = value;
+                    OnPropertyChanged("Mass");
                 }
             }
         }
 
-        private string zParametrization;
-        public string ZParametrization
+        private double springer;
+        public double Springer
         {
-            get { return zParametrization; }
+            get { return springer; }
             set
             {
-                if (value != zParametrization)
+                if (value != springer)
                 {
-                    zParametrization = value;
-                    OnPropertyChanged("ZParametrization");
+                    springer = value;
+                    OnPropertyChanged("Springer");
+                }
+            }
+        }
+        private double springerFrame;
+        public double SpringerFrame
+        {
+            get { return springerFrame; }
+            set
+            {
+                if (value != springerFrame)
+                {
+                    springerFrame = value;
+                    OnPropertyChanged("SpringerFrame");
                 }
             }
         }
 
-        private double minParameterValue;
-        public double MinParameterValue
+        private double viscosity;
+        public double Viscosity
         {
-            get { return minParameterValue; }
+            get { return viscosity; }
             set
             {
-                if (value != minParameterValue)
+                if (value != viscosity)
                 {
-                    minParameterValue = value;
-                    OnPropertyChanged("MinParameterValue");
+                    viscosity = value;
+                    OnPropertyChanged("Viscosity");
                 }
             }
         }
 
-        private double maxParameterValue;
-        public double MaxParameterValue
+        private double delta;
+        public double Delta
         {
-            get { return maxParameterValue; }
+            get { return delta; }
             set
             {
-                if (value != maxParameterValue)
+                if (value != delta)
                 {
-                    maxParameterValue = value;
-                    OnPropertyChanged("MaxParameterValue");
+                    delta = value;
+                    OnPropertyChanged("Delta");
                 }
             }
         }
@@ -150,26 +254,16 @@ namespace FrenetFrame
         Random rnd = new Random(DateTime.Now.Millisecond);
         System.Windows.Threading.DispatcherTimer dispatcherTimer;
 
-        Expression xExpression;
-        Expression yExpression;
-        Expression zExpression;
-        private bool curveLoaded = false;
-        private int actualParameterIndex;
-        private double parameterStep;
-        ArrowVisual3D arrowTangent;
-        ArrowVisual3D arrowNormal;
-        ArrowVisual3D arrowBinormal;
-        Func<double, int> intervalFunc;
-        private List<Point3D> curveArray;
-        private bool animationPaused;
-        private const double Epsilon = 0.0001;
-        Dictionary<string, FloatingPoint> symbols;
-        Expression symbol;
+
         private IBezierCubeVisual3D bezierCube;
         private IFrameVisual3D frameCube;
         private CombinedManipulator manipulator;
         private int cubeSize = 6;
-        private RectangleVisual3D rect;
+        private IRoomVisual3D room;
+        private BezierSurface[] surfaces;
+        private PointsVisual3D spherePoints;
+        private List<DefaultTriangulationCell<Vertex>> Del_tetras;
+        private MeshGeometryVisual3D geometry = new MeshGeometryVisual3D();
 
         #endregion
 
@@ -180,6 +274,7 @@ namespace FrenetFrame
             DataContext = this;
             Initialize();
             InitializeScene();
+            updateSpringData();
         }
 
         #endregion
@@ -189,14 +284,12 @@ namespace FrenetFrame
         {
             const double maxVal = 8;
 
-            //SortingVisual3D sortingVisual3D = new SortingVisual3D();
-            //sortingVisual3D.SortingFrequency = 2;
-            //HelixViewport.Children.Add(sortingVisual3D);
-
-
+            room = new RoomVisual3D();
+            room.Initialize();
 
             bezierCube = new BezierCubeVisual3D();
             bezierCube.Initialize(cubeSize);
+            bezierCube.CollisionChecker = room;
 
             HelixViewport.Children.Add(bezierCube.points);
             HelixViewport.Children.Add(bezierCube.lines);
@@ -208,17 +301,57 @@ namespace FrenetFrame
             HelixViewport.Children.Add(frameCube.GetJointsPoints(bezierCube.GetCornerPoints()));
 
             manipulator = new CombinedManipulator();
+            manipulator.Offset = new Vector3D(0, 0, 7);
             HelixViewport.Children.Add(manipulator);
 
-            rect = new RectangleVisual3D();
-            rect.Fill = new SolidColorBrush(Color.FromArgb(120, 255, 0, 0));
-            rect.Normal = new Vector3D(0, 1, 0);
-            rect.Origin = new Point3D(-10, 0, 0);
-            rect.Width = 20;
-            rect.Length = 20;
-            rect.LengthDirection = new Vector3D(0, 0, 1);
 
-            HelixViewport.Children.Add(rect);
+
+            surfaces = new BezierSurface[6];
+            for (int i = 0; i < 6; i++)
+            {
+                surfaces[i] = new BezierSurface()
+                {
+                    Fill = new SolidColorBrush(Color.FromArgb(100, 255, 0, 255)),//Brushes.BlueViolet,
+                    MeshSizeU = 20,
+                    MeshSizeV = 20
+                };
+                surfaces[i].UpdateSurface(bezierCube.GetFaceControlPoints(i));
+                surfaces[i].UpdateModel();
+            }
+
+            IList<Vertex> vertices = bezierCube.GetSpherePoints().Select(p => new Vertex(p.X, p.Y, p.Z)).ToList();
+            var convexHull = ConvexHull.Create<Vertex, Face>(vertices);
+            List<Vertex> convexHullVertices = convexHull.Points.ToList();
+            List<Face> faces = convexHull.Faces.ToList();
+
+            geometry = new MeshGeometryVisual3D();
+            var builder = new MeshBuilder(false, false);
+
+            IList<Point3D> t = new List<Point3D>();
+            faces.ForEach(node =>
+            {
+                double[] pos = node.Vertices[0].Position;
+                t.Add(new Point3D(pos[0], pos[1], pos[2]));
+                pos = node.Vertices[1].Position;
+                t.Add(new Point3D(pos[0], pos[1], pos[2]));
+                pos = node.Vertices[2].Position;
+                t.Add(new Point3D(pos[0], pos[1], pos[2]));
+            });
+            builder.AddTriangles(t);
+            geometry.MeshGeometry = builder.ToMesh(true);
+
+
+            spherePoints = new PointsVisual3D();
+            spherePoints.Points = bezierCube.GetSpherePoints();
+            spherePoints.Size = 3;
+
+
+
+
+            ParametricSurface3D v;
+
+
+            room.UpdateViewport(HelixViewport);
             
 
             double arrowsSize = 0.05;
@@ -294,54 +427,27 @@ namespace FrenetFrame
             zArrowText.FontWeight = System.Windows.FontWeights.Bold;
             HelixViewport.Children.Add(zArrowText);
 
-            arrowTangent = new ArrowVisual3D();
-            arrowNormal = new ArrowVisual3D();
-            arrowBinormal = new ArrowVisual3D();
         }
 
         private void Initialize()
         {
-            curvePoints = new ObservableCollection<Point3D>();
-            curveArray = new List<Point3D>();
-            kappaPoints = new ObservableCollection<DataPoint>();
-            tauPoints = new ObservableCollection<DataPoint>();
-            animationSpeed = 5.5;
-            xParametrization = "2 * sin(t)";
-            yParametrization = "2 * cos(t)";
-            zParametrization = "t^2 / 6";
-            symbol = Expression.Symbol("t");
-            symbols = new Dictionary<string, FloatingPoint> { { "t", 0 } };
-            minParameterValue = -2 * Math.PI;
-            maxParameterValue = 2 * Math.PI;
-            segmentsCount = 500;
-            intervalFunc = (x) => (int)(500 / Math.Pow(2, x));
+            Noise = 5;
+            IsSurfaceVisible = true;
+            IsDeformingObjectVisible = true;
+
+            Mass = 1;
+            Springer = 0.5; //c1  sprężystość
+            SpringerFrame = 0.2; // c2 sprężystość
+            Viscosity = 0.2; //k lepkość
+            Delta = 0.5;
+
             dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
             dispatcherTimer.Tick += dispatcherTimer_Tick;
-            dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 10); //new TimeSpan(0, 0, 0, 0, intervalFunc(animationSpeed));
+            dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, (int)animationSpeed); //new TimeSpan(0, 0, 0, 0, intervalFunc(animationSpeed));
 
-            dispatcherTimer.Start();
+           dispatcherTimer.Start();
         }
 
-        private double Norm(Vector3D v)
-        {
-            return Math.Sqrt(v.X * v.X + v.Y * v.Y + v.Z * v.Z);
-        }
-
-        private Vector3D PerpendicularVector(Vector3D v)
-        {
-            if (Math.Abs(v.X - v.Y) < Epsilon && Math.Abs(v.Y - v.Z) < Epsilon)
-                return new Vector3D(v.X, v.Y, -v.Z);
-            var x = Math.Abs(v.X);
-            var y = Math.Abs(v.Y);
-            var z = Math.Abs(v.Z);
-            if (x > y && x > z)
-                return new Vector3D(v.Z, -v.X, v.Y);
-            if (y > x && y > z)
-                return new Vector3D(v.Z, v.X, -v.Y);
-            return new Vector3D(-v.Z, -v.X, v.Y);
-        }
-
-         
 
         private void dispatcherTimer_Tick(object sender, EventArgs e)
         {
@@ -369,107 +475,146 @@ namespace FrenetFrame
             HelixViewport.Children.Add(frameCube.lines);
             HelixViewport.Children.Add(frameCube.points);
 
-            HelixViewport.Children.Remove(rect);
-            HelixViewport.Children.Add(rect);
+          
+            if (IsDeformingObjectVisible)
+            {
+                HelixViewport.Children.Remove(geometry);
+                IList<Vertex> vertices = bezierCube.GetSpherePoints().Select(p => new Vertex(p.X, p.Y, p.Z)).ToList();
+                var convexHull = ConvexHull.Create<Vertex, Face>(vertices);
+                List<Vertex> convexHullVertices = convexHull.Points.ToList();
+                List<Face> faces = convexHull.Faces.ToList();
+
+                geometry = new MeshGeometryVisual3D();
+                var builder = new MeshBuilder(false, false);
+
+                IList<Point3D> t = new List<Point3D>();
+                faces.ForEach(node =>
+                {
+                    double[] pos = node.Vertices[0].Position;
+                    t.Add(new Point3D(pos[0], pos[1], pos[2]));
+                    pos = node.Vertices[1].Position;
+                    t.Add(new Point3D(pos[0], pos[1], pos[2]));
+                    pos = node.Vertices[2].Position;
+                    t.Add(new Point3D(pos[0], pos[1], pos[2]));
+                });
+                builder.AddTriangles(t);
+                geometry.MeshGeometry = builder.ToMesh(true);
+                HelixViewport.Children.Add(geometry);
+
+
+                HelixViewport.Children.Remove(spherePoints);
+                spherePoints.Points = bezierCube.GetSpherePoints();
+                HelixViewport.Children.Add(spherePoints);
+            }
+            if (IsSurfaceVisible)
+            {
+                for (int i = 0; i < 6; i++)
+                {
+                    surfaces[i].UpdateSurface(bezierCube.GetFaceControlPoints(i));
+                    surfaces[i].UpdateModel();
+                    HelixViewport.Children.Remove(surfaces[i]);
+                    HelixViewport.Children.Add(surfaces[i]);
+                }
+            }
+            room.UpdateViewport(HelixViewport);
         }
 
         private void PlayButton_Click(object sender, RoutedEventArgs e)
         {
-            //if (!curveLoaded)
-            //    LoadCurveButton_Click(null, null);
-            //if (animationPaused)
-            //    animationPaused = false;
-            //else
-            //    actualParameterIndex = 2;
-            dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, intervalFunc(animationSpeed));
             dispatcherTimer.Start();
         }
 
         private void PauseButton_Click(object sender, RoutedEventArgs e)
         {
             dispatcherTimer.Stop();
-            animationPaused = true;
         }
 
-        private void ResetButton_Click(object sender, RoutedEventArgs e)
+        private void RefreshButtonClick(object sender, RoutedEventArgs e)
         {
-            dispatcherTimer.Stop();
-            HelixViewport.Children.Remove(arrowTangent);
-            HelixViewport.Children.Remove(arrowNormal);
-            HelixViewport.Children.Remove(arrowBinormal);
-            kappaPoints.Clear();
-            tauPoints.Clear();
+            dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0,(int) animationSpeed);
+            updateSpringData();
+
         }
 
-        private void LoadCurveButton_Click(object sender, RoutedEventArgs e)
+        private void updateSpringData()
         {
-            curvePoints.Clear();
-            curveArray.Clear();
-            //xExpression = new Expression(xParametrization);
-            //xExpression.Parameters.Add("t", 0);
-            //yExpression = new Expression(yParametrization);
-            //yExpression.Parameters.Add("t", 0);
-            //zExpression = new Expression(zParametrization);
-            //zExpression.Parameters.Add("t", 0);
+            bezierCube.noise = Noise;
 
-            //if (xExpression.HasErrors() || yExpression.HasErrors() || zExpression.HasErrors())
-            //{
-            //    curveLoaded = false;
-            //    MessageBox.Show("Wrong format of parametrizations.");
-            //    return;
-            //}
+            bezierCube.spring.Mass = Mass;
+            bezierCube.spring.Springer = Springer;
+            bezierCube.spring.Viscosity = Viscosity;
+            bezierCube.spring.Delta = Delta;
 
-            try
+
+            bezierCube.springFrame.Mass = Mass;
+            bezierCube.springFrame.Springer = SpringerFrame;
+            bezierCube.springFrame.Viscosity = Viscosity;
+            bezierCube.springFrame.Delta = Delta;
+        }
+
+        #endregion
+
+        private void ResetButtonClick(object sender, RoutedEventArgs e)
+        {
+            HelixViewport.Children.Remove(bezierCube.points);
+            HelixViewport.Children.Remove(bezierCube.lines);
+            HelixViewport.Children.Remove(frameCube.points);
+            HelixViewport.Children.Remove(frameCube.lines);
+            HelixViewport.Children.Remove(spherePoints);
+            LinesVisual3D frameLines = frameCube.GetJointsPoints(bezierCube.GetCornerPoints());
+            HelixViewport.Children.Remove(frameLines);
+            HelixViewport.Children.Remove(manipulator);
+            HelixViewport.Children.Remove(spherePoints);
+            HelixViewport.Children.Remove(geometry);
+
+            room.RemoveWalls(HelixViewport);
+            for (int i = 0; i < 6; i++)
             {
-                xExpression = Infix.ParseOrThrow(xParametrization);
-                yExpression = Infix.ParseOrThrow(yParametrization);
-                zExpression = Infix.ParseOrThrow(zParametrization);
+                 HelixViewport.Children.Remove(surfaces[i]);
             }
-            catch (Exception exception)
+
+            InitializeScene();
+            updateSpringData();
+            if (IsSurfaceVisible)
             {
-                curveLoaded = false;
-                MessageBox.Show("Wrong format of parametrization.\n" + exception.Message);
-                return;
-            }
-            
-            var flag = true;
-            try
-            {
-                parameterStep = (maxParameterValue - minParameterValue) / segmentsCount;
-                for (double t = minParameterValue; t < maxParameterValue + parameterStep / 2; t += parameterStep)
+                for (int i = 0; i < 6; i++)
                 {
-                    //xExpression.Parameters["t"] = t;
-                    //yExpression.Parameters["t"] = t;
-                    //zExpression.Parameters["t"] = t;
-                    //double xResult = (double)xExpression.Evaluate();
-                    //double yResult = (double)yExpression.Evaluate();
-                    //double zResult = (double)zExpression.Evaluate();
-                    symbols["t"] = t;
-                    double xResult = Evaluate.Evaluate(symbols, xExpression).RealValue;
-                    double yResult = Evaluate.Evaluate(symbols, yExpression).RealValue;
-                    double zResult = Evaluate.Evaluate(symbols, zExpression).RealValue;
-                    curveArray.Add(new Point3D(xResult, yResult, zResult));
-                    curvePoints.Add(new Point3D(xResult, yResult, zResult));
-                    if (flag)
-                        flag = false;
-                    else
-                        curvePoints.Add(curvePoints[curvePoints.Count - 1]);
+                    HelixViewport.Children.Add(surfaces[i]);
                 }
             }
-            catch (Exception exception)
+            if (IsDeformingObjectVisible)
             {
-                curveLoaded = false;
-                curvePoints.Clear();
-                if(exception.HResult == -2146232969)
-                    MessageBox.Show("Given parametrization is not based on [t] variable.\n");
-                else if(exception.HResult == -2146233088)
-                    MessageBox.Show("Cannot calculate curve for given set.\n");
-                else
-                    MessageBox.Show("Cannot calculate curve for given set.\n" + exception.Message);
-                return;
+                HelixViewport.Children.Add(geometry);
+                HelixViewport.Children.Add(spherePoints);
             }
-            curveLoaded = true;
         }
-        #endregion
+
+        private void SurfaceVisibilityCheckBox_OnChecked(object sender, RoutedEventArgs e)
+        {
+            for (int i = 0; i < 6; i++)
+            {
+                HelixViewport.Children.Add(surfaces[i]);
+            }
+        }
+
+        private void SurfaceVisibilityCheckBox_OnUnchecked(object sender, RoutedEventArgs e)
+        {
+            for (int i = 0; i < 6; i++)
+            {
+                HelixViewport.Children.Remove(surfaces[i]);
+            }
+        }
+
+        private void DeformingObjectCheckBox_OnChecked(object sender, RoutedEventArgs e)
+        {
+            HelixViewport.Children.Add(geometry);
+            HelixViewport.Children.Add(spherePoints);
+        }
+
+        private void DeformingObjectCheckBox_OnUnchecked(object sender, RoutedEventArgs e)
+        {
+            HelixViewport.Children.Remove(geometry);
+            HelixViewport.Children.Remove(spherePoints);
+        }
     }
 }
